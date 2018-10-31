@@ -1,11 +1,17 @@
-FROM golang:alpine AS build
-WORKDIR /go/src/app
-COPY . /go/src/app/
-RUN apk --no-cache add git &&\
- go get ./... &&\
- CGO_ENABLED=0 go build -o /hn .
-
 FROM alpine:3.8
-RUN apk add --no-cache ca-certificates
-COPY --from=build /hn /hn
+
+ENV GOPATH=/go
+
+WORKDIR /go/src/app
+COPY main.go /go/src/app/
+
+
+RUN apk --no-cache add ca-certificates go git musl-dev && \
+ go get ./... && \
+ CGO_ENABLED=0 go build -o /hn . && \
+ apk del go git musl-dev && \
+ rm -rf $GOPATH
+
+WORKDIR /
+
 CMD [ "/hn" ]
